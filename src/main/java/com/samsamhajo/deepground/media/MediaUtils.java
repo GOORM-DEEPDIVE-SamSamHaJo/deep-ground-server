@@ -1,5 +1,6 @@
 package com.samsamhajo.deepground.media;
 
+import com.samsamhajo.deepground.global.utils.GlobalLogger;
 import org.springframework.core.io.InputStreamResource;
 import org.springframework.http.MediaType;
 import org.springframework.web.multipart.MultipartFile;
@@ -10,14 +11,15 @@ import java.io.FileNotFoundException;
 
 public class MediaUtils {
 
-    public static InputStreamResource getMedia(String mediaUrl) {
-        String[] mediaUrlParts = mediaUrl.split("/");
-        String mediaName = mediaUrlParts[mediaUrlParts.length - 1];
-        String mediaPath = "/media/" + mediaName;
+    private static final String MEDIA_DIR = System.getProperty("user.dir") + "/media/";
 
+    public static InputStreamResource getMedia(String mediaUrl) {
+        String[] parts = mediaUrl.split("/");
+        String filename = parts[parts.length - 1];
+        String fullPath = MEDIA_DIR + filename;
+        
         try {
-            File file = new File(mediaPath);
-            return new InputStreamResource(new FileInputStream(file));
+            return new InputStreamResource(new FileInputStream(new File(fullPath)));
         } catch (FileNotFoundException e) {
             throw new MediaException(MediaErrorCode.MEDIA_NOT_FOUND);
         }
@@ -34,9 +36,30 @@ public class MediaUtils {
         };
     }
 
-    public static String generateMediaUrl(MultipartFile multipartFile) {
-        String mediaName = generateRandomString(10) + "_" + multipartFile.getName();
-        return "/media/" + mediaName;
+    public static String generateMediaUrl(MultipartFile file) {
+        // 폴더 생성 확인
+        new File(MEDIA_DIR).mkdirs();
+        
+        String filename = generateRandomString(10) + "_" + file.getOriginalFilename();
+        String fullPath = MEDIA_DIR + filename;
+        
+        // saveMedia 메서드 활용하여 파일 저장
+        saveMedia(file, fullPath);
+        
+        return "/media/" + filename; // URL 용도
+    }
+
+    public static void saveMedia(MultipartFile file, String mediaPath) {
+        try {
+            File dest = new File(mediaPath);
+            if (!dest.getParentFile().exists()) {
+                dest.getParentFile().mkdirs();
+            }
+            file.transferTo(dest);
+        } catch (Exception e) {
+            GlobalLogger.error(e.getMessage());
+            throw new MediaException(MediaErrorCode.MEDIA_SAVE_ERROR);
+        }
     }
 
     public static String getExtension(String url) {
@@ -51,7 +74,7 @@ public class MediaUtils {
     public static boolean deleteMedia(String mediaUrl) {
         String[] mediaUrlParts = mediaUrl.split("/");
         String mediaName = mediaUrlParts[mediaUrlParts.length - 1];
-        String mediaPath = "/media/" + mediaName;
+        String mediaPath = MEDIA_DIR + mediaName;  // MEDIA_DIR 상수 사용
 
         File file = new File(mediaPath);
         return file.exists() && file.delete();
