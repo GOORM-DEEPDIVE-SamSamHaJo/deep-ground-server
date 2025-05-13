@@ -48,6 +48,15 @@ public class MediaUtils {
         return name.substring(name.lastIndexOf(".") + 1);
     }
 
+    public static boolean deleteMedia(String mediaUrl) {
+        String[] mediaUrlParts = mediaUrl.split("/");
+        String mediaName = mediaUrlParts[mediaUrlParts.length - 1];
+        String mediaPath = "/media/" + mediaName;
+
+        File file = new File(mediaPath);
+        return file.exists() && file.delete();
+    }
+
     private static String generateRandomString(int length) {
         StringBuilder sb = new StringBuilder();
         String characters = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789";
