@@ -34,4 +34,8 @@ public class Feed extends BaseEntity {
     public static Feed of(String content, Member member) {
         return new Feed(content, member);
     }
+    
+    public void updateContent(String content) {
+        this.content = content;
+    }
 }
