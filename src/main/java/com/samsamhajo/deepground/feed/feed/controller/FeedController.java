@@ -43,12 +43,11 @@ public class FeedController {
     
     @PutMapping(value = "/{feedId}", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
     public ResponseEntity<SuccessResponse<Feed>> updateFeed(
-            @PathVariable Long feedId,
+            @PathVariable("feedId") Long feedId,
             @ModelAttribute FeedUpdateRequest request) {
-        
-        Feed updatedFeed = feedService.updateFeed(feedId, request, DEV_MEMBER_ID);
+        feedService.updateFeed(feedId, request, DEV_MEMBER_ID);
         
         return ResponseEntity
-                .ok(SuccessResponse.of(FeedSuccessCode.FEED_UPDATED, updatedFeed));
+                .ok(SuccessResponse.of(FeedSuccessCode.FEED_UPDATED));
     }
 }
