@@ -50,8 +50,7 @@ public class FeedService {
             throw new FeedException(FeedErrorCode.INVALID_FEED_CONTENT);
         }
 
-        Feed feed = feedRepository.findById(feedId)
-                .orElseThrow(() -> new FeedException(FeedErrorCode.FEED_NOT_FOUND));
+        Feed feed = feedRepository.getById(feedId);
 
         // TODO: 권한 체크 로직 추가 (본인 피드만 수정 가능)
         // if (!feed.getMember().getId().equals(memberId)) {
