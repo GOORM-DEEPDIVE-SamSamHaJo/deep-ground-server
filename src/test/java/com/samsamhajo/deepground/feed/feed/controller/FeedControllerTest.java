@@ -1,10 +1,13 @@
 package com.samsamhajo.deepground.feed.feed.controller;
 
 import com.samsamhajo.deepground.feed.feed.entity.Feed;
+import com.samsamhajo.deepground.feed.feed.exception.FeedErrorCode;
+import com.samsamhajo.deepground.feed.feed.exception.FeedException;
 import com.samsamhajo.deepground.feed.feed.exception.FeedSuccessCode;
 import com.samsamhajo.deepground.feed.feed.model.FeedCreateRequest;
 import com.samsamhajo.deepground.feed.feed.model.FeedListResponse;
 import com.samsamhajo.deepground.feed.feed.model.FeedResponse;
+import com.samsamhajo.deepground.feed.feed.model.FeedUpdateRequest;
 import com.samsamhajo.deepground.feed.feed.service.FeedService;
 import com.samsamhajo.deepground.member.entity.Member;
 import org.junit.jupiter.api.DisplayName;
@@ -19,13 +22,17 @@ import org.springframework.data.domain.Sort;
 import org.springframework.http.MediaType;
 import org.springframework.mock.web.MockMultipartFile;
 import org.springframework.test.web.servlet.MockMvc;
+import org.springframework.web.multipart.MultipartFile;
 
 import java.time.LocalDateTime;
 import java.util.List;
 
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.anyLong;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.BDDMockito.given;
+import static org.mockito.Mockito.doThrow;
+import static org.mockito.Mockito.when;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.multipart;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
@@ -104,5 +111,123 @@ class FeedControllerTest {
                 .andExpect(jsonPath("$.result.feeds[1].content").value("두 번째 피드"))
                 .andExpect(jsonPath("$.result.currentPage").value(page))
                 .andExpect(jsonPath("$.result.totalPages").value(1));
+    }
+    
+    @Test
+    @DisplayName("피드 수정 성공 테스트")
+    void updateFeed_Success() throws Exception {
+        // given
+        Long feedId = 1L;
+        Long memberId = 1L;
+        String updatedContent = "수정된 피드 내용";
+        Feed updatedFeed = Feed.of(updatedContent, member);
+        
+        MockMultipartFile imagePart = new MockMultipartFile(
+                "images", 
+                "updated-image.jpg", 
+                "image/jpeg", 
+                "수정된 이미지 테스트 데이터".getBytes()
+        );
+        
+        MockMultipartFile contentPart = new MockMultipartFile(
+                "content",
+                "",
+                "text/plain",
+                updatedContent.getBytes()
+        );
+        
+        when(feedService.updateFeed(eq(feedId), any(FeedUpdateRequest.class), eq(memberId)))
+                .thenReturn(updatedFeed);
+        
+        // when & then
+        mockMvc.perform(multipart("/api/v1/feed/{feedId}", feedId)
+                        .file(imagePart)
+                        .file(contentPart)
+                        .with(request -> {
+                            request.setMethod("PUT");
+                            return request;
+                        })
+                        .contentType(MediaType.MULTIPART_FORM_DATA_VALUE))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.status").value(FeedSuccessCode.FEED_UPDATED.getStatus().value()))
+                .andExpect(jsonPath("$.message").value(FeedSuccessCode.FEED_UPDATED.getMessage()));
+    }
+    
+    @Test
+    @DisplayName("피드 수정 실패 테스트 - 빈 내용")
+    void updateFeed_Fail_EmptyContent() throws Exception {
+        // given
+        Long feedId = 1L;
+        Long memberId = 1L;
+        String emptyContent = "";
+        
+        MockMultipartFile imagePart = new MockMultipartFile(
+                "images", 
+                "updated-image.jpg", 
+                "image/jpeg", 
+                "수정된 이미지 테스트 데이터".getBytes()
+        );
+        
+        MockMultipartFile contentPart = new MockMultipartFile(
+                "content",
+                "",
+                "text/plain",
+                emptyContent.getBytes()
+        );
+        
+        doThrow(new FeedException(FeedErrorCode.INVALID_FEED_CONTENT))
+                .when(feedService).updateFeed(eq(feedId), any(FeedUpdateRequest.class), eq(memberId));
+        
+        // when & then
+        mockMvc.perform(multipart("/api/v1/feed/{feedId}", feedId)
+                        .file(imagePart)
+                        .file(contentPart)
+                        .with(request -> {
+                            request.setMethod("PUT");
+                            return request;
+                        })
+                        .contentType(MediaType.MULTIPART_FORM_DATA_VALUE))
+                .andExpect(status().isBadRequest())
+                .andExpect(jsonPath("$.status").value(FeedErrorCode.INVALID_FEED_CONTENT.getStatus().value()))
+                .andExpect(jsonPath("$.message").value(FeedErrorCode.INVALID_FEED_CONTENT.getMessage()));
+    }
+    
+    @Test
+    @DisplayName("피드 수정 실패 테스트 - 존재하지 않는 피드")
+    void updateFeed_Fail_FeedNotFound() throws Exception {
+        // given
+        Long nonExistentFeedId = 999L;
+        Long memberId = 1L;
+        String content = "수정된 피드 내용";
+        
+        MockMultipartFile imagePart = new MockMultipartFile(
+                "images", 
+                "updated-image.jpg", 
+                "image/jpeg", 
+                "수정된 이미지 테스트 데이터".getBytes()
+        );
+        
+        MockMultipartFile contentPart = new MockMultipartFile(
+                "content",
+                "",
+                "text/plain",
+                content.getBytes()
+        );
+        
+        doThrow(new FeedException(FeedErrorCode.FEED_NOT_FOUND))
+                .when(feedService).updateFeed(eq(nonExistentFeedId), any(FeedUpdateRequest.class), eq(memberId));
+        
+        // when & then
+        mockMvc.perform(multipart("/api/v1/feed/{feedId}", nonExistentFeedId)
+                        .file(imagePart)
+                        .file(contentPart)
+                        .with(request -> {
+                            request.setMethod("PUT");
+                            return request;
+                        })
+                        .contentType(MediaType.MULTIPART_FORM_DATA_VALUE))
+                .andExpect(status().isNotFound())
+                .andExpect(jsonPath("$.status").value(FeedErrorCode.FEED_NOT_FOUND.getStatus().value()))
+                .andExpect(jsonPath("$.message").value(FeedErrorCode.FEED_NOT_FOUND.getMessage()));
     }
 } 
