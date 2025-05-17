@@ -6,6 +6,7 @@ import com.samsamhajo.deepground.friend.Dto.FriendRequestDto;
 import com.samsamhajo.deepground.friend.Exception.FriendSuccessCode;
 import com.samsamhajo.deepground.friend.service.FriendService;
 import com.samsamhajo.deepground.global.success.SuccessResponse;
+import com.samsamhajo.deepground.member.entity.Member;
 import jakarta.validation.Valid;
 import lombok.AllArgsConstructor;
 import lombok.Getter;
@@ -45,5 +46,15 @@ public class FriendController {
                 .ok(SuccessResponse.of(FriendSuccessCode.FRIEND_SUCCESS_CANCEL,friendId));
 
     }
+
+    @PatchMapping("/receive/{friendId}/accept")
+    public ResponseEntity<SuccessResponse> acceptFriendRequest(@PathVariable Long friendId,
+                                                               @RequestParam Member receiverId){
+        friendService.acceptFriendRequest(friendId, receiverId);
+        return ResponseEntity
+                .ok(SuccessResponse.of(FriendSuccessCode.FRIEND_SUCCESS_ACCEPT,friendId));
+    }
+
+
 
 }

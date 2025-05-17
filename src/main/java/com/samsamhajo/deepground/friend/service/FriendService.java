@@ -13,7 +13,6 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.util.List;
-import java.util.stream.Collectors;
 
 @Service
 @Transactional(readOnly = true)
@@ -71,5 +70,29 @@ public class FriendService {
 
         return friendRequest.getId();
 
+    }
+
+    @Transactional
+    public Long acceptFriendRequest(Long friendId, Member receiver) {
+        Friend friendRequest = validateAccept(friendId, receiver);
+
+        friendRequest.accept();
+
+        return friendRequest.getId();
+    }
+    private Friend validateAccept(Long friendId, Member receiver){
+        Friend friendRequest = friendRepository.findById(friendId)
+                .orElseThrow(() -> new FriendException(FriendErrorCode.INVALID_FRIEND_REQUEST));
+
+        if (!friendRequest.getReceiveMember().equals(receiver)) {
+            throw new FriendException(FriendErrorCode.UNAUTHORIZED_ACCESS);
+        }
+
+        if(friendRepository.existsByIdAndReceiveMemberAndStatus(friendId, receiver,FriendStatus.ACCEPT)) {
+            throw new FriendException(FriendErrorCode.ALREADY_FRIEND);
+        }
+
+
+        return friendRequest;
     }
 }
