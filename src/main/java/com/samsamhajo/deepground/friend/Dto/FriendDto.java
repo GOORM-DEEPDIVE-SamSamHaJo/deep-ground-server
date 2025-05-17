@@ -26,4 +26,12 @@ public class FriendDto {
         );
     }
 
+    public static FriendDto fromReceived(Friend friend) {
+        return new FriendDto(
+                friend.getId(),
+                friend.getRequestMember().getNickname(),
+                friend.getStatus()
+        );
+    }
+
 }
