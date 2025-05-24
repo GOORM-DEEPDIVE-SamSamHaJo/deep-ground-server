@@ -5,6 +5,7 @@ import com.samsamhajo.deepground.calendar.dto.StudyScheduleResponseDto;
 import com.samsamhajo.deepground.calendar.entity.StudySchedule;
 import com.samsamhajo.deepground.calendar.exception.ScheduleErrorCode;
 import com.samsamhajo.deepground.calendar.exception.ScheduleException;
+import com.samsamhajo.deepground.calendar.repository.MemberStudyScheduleRepository;
 import com.samsamhajo.deepground.calendar.repository.StudyScheduleRepository;
 import com.samsamhajo.deepground.studyGroup.entity.StudyGroup;
 import com.samsamhajo.deepground.studyGroup.repository.StudyGroupRepository;
@@ -34,6 +35,9 @@ class StudyScheduleServiceTest {
 
     @Mock
     private StudyGroupRepository studyGroupRepository;
+
+    @Mock
+    private MemberStudyScheduleRepository memberStudyScheduleRepository;
 
     @InjectMocks
     private StudyScheduleService studyScheduleService;
@@ -328,6 +332,7 @@ class StudyScheduleServiceTest {
         studyScheduleService.deleteStudySchedule(studyGroupId, scheduleId);
 
         // then
+        verify(memberStudyScheduleRepository).deleteAllByStudyScheduleId(schedule.getId());
         verify(studyScheduleRepository).delete(schedule);
     }
 

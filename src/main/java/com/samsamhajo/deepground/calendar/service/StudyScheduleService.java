@@ -5,6 +5,7 @@ import com.samsamhajo.deepground.calendar.dto.StudyScheduleResponseDto;
 import com.samsamhajo.deepground.calendar.entity.StudySchedule;
 import com.samsamhajo.deepground.calendar.exception.ScheduleErrorCode;
 import com.samsamhajo.deepground.calendar.exception.ScheduleException;
+import com.samsamhajo.deepground.calendar.repository.MemberStudyScheduleRepository;
 import com.samsamhajo.deepground.calendar.repository.StudyScheduleRepository;
 import com.samsamhajo.deepground.studyGroup.entity.StudyGroup;
 import com.samsamhajo.deepground.studyGroup.repository.StudyGroupRepository;
@@ -20,6 +21,7 @@ public class StudyScheduleService {
 
     private final StudyScheduleRepository studyScheduleRepository;
     private final StudyGroupRepository studyGroupRepository;
+    private final MemberStudyScheduleRepository memberStudyScheduleRepository;
 
     @Transactional
     public StudyScheduleResponseDto createStudySchedule(Long studyGroupId, StudyScheduleRequestDto requestDto) {
@@ -38,15 +40,7 @@ public class StudyScheduleService {
 
         StudySchedule savedSchedule = studyScheduleRepository.save(studySchedule);
 
-        return StudyScheduleResponseDto.builder()
-                .id(savedSchedule.getId())
-                .title(savedSchedule.getTitle())
-                .startTime(savedSchedule.getStartTime())
-                .endTime(savedSchedule.getEndTime())
-                .description(savedSchedule.getDescription())
-                .location(savedSchedule.getLocation())
-                .build();
-
+        return StudyScheduleResponseDto.from(savedSchedule);
     }
 
     @Transactional(readOnly = true)
@@ -57,15 +51,8 @@ public class StudyScheduleService {
         List<StudySchedule> schedules = studyScheduleRepository.findAllByStudyGroupId(studyGroupId);
 
         return schedules.stream()
-                .map(schedule -> StudyScheduleResponseDto.builder()
-                        .id(schedule.getId())
-                        .title(schedule.getTitle())
-                        .startTime(schedule.getStartTime())
-                        .endTime(schedule.getEndTime())
-                        .description(schedule.getDescription())
-                        .location(schedule.getLocation())
-                        .build()
-                ).toList();
+                .map(StudyScheduleResponseDto::from)
+                .toList();
     }
 
     @Transactional
@@ -95,24 +82,19 @@ public class StudyScheduleService {
                 requestDto.getLocation()
         );
 
-        return StudyScheduleResponseDto.builder()
-                .id(studySchedule.getId())
-                .title(studySchedule.getTitle())
-                .startTime(studySchedule.getStartTime())
-                .endTime(studySchedule.getEndTime())
-                .description(studySchedule.getDescription())
-                .location(studySchedule.getLocation())
-                .build();
+        return StudyScheduleResponseDto.from(studySchedule);
     }
 
     @Transactional
     public void deleteStudySchedule(Long studyGroupId, Long scheduleId) {
         StudySchedule schedule = studyScheduleRepository.findById(scheduleId)
-                .orElseThrow(() -> new ScheduleException(ScheduleErrorCode.STUDY_GROUP_NOT_FOUND));
+                .orElseThrow(() -> new ScheduleException(ScheduleErrorCode.SCHEDULE_NOT_FOUND));
 
         if (!schedule.getStudyGroup().getId().equals(studyGroupId)) {
             throw new ScheduleException(ScheduleErrorCode.MISMATCHED_GROUP);
         }
+
+        memberStudyScheduleRepository.deleteAllByStudyScheduleId(schedule.getId());
 
         studyScheduleRepository.delete(schedule);
     }
