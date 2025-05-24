@@ -8,7 +8,6 @@ import lombok.Getter;
 @Builder
 public class ChatMessageRequest {
 
-    private Long senderId; // TODO: @AuthenticationPrincipal 사용 시 senderId 제거
     private String message;
     private List<String> mediaIds;
 }

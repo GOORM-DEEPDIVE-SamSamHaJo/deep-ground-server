@@ -43,7 +43,6 @@ public class ChatMessageServiceTest {
         // given
         String message = "테스트 채팅 메시지";
         ChatMessageRequest request = ChatMessageRequest.builder()
-                .senderId(memberId)
                 .message(message)
                 .build();
         ChatMessage chatMessage = ChatMessage.of(chatRoomId, memberId, message);
@@ -70,7 +69,6 @@ public class ChatMessageServiceTest {
     void sendMessage_withEmptyContent_throwsException() {
         // given
         ChatMessageRequest request = ChatMessageRequest.builder()
-                .senderId(memberId)
                 .build();
 
         // when & then

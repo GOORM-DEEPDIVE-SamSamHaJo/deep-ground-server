@@ -27,6 +27,7 @@ public class SecurityConfig {
             "/webjars/**",
             "/v3/api-docs.yaml",
             "/auth/**",
+            "/ws/**",
             "/**"
     };
 

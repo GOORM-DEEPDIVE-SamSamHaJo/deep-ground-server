@@ -1,5 +1,6 @@
 package com.samsamhajo.deepground.global.config;
 
+import com.samsamhajo.deepground.auth.security.CustomUserDetails;
 import com.samsamhajo.deepground.chat.service.ChatRoomMemberService;
 import com.samsamhajo.deepground.utils.destination.DestinationUtils;
 import lombok.RequiredArgsConstructor;
@@ -12,6 +13,7 @@ import org.springframework.messaging.support.MessageHeaderAccessor;
 import org.springframework.security.authorization.AuthorizationDecision;
 import org.springframework.security.authorization.AuthorizationManager;
 import org.springframework.security.config.annotation.web.socket.EnableWebSocketSecurity;
+import org.springframework.security.core.Authentication;
 import org.springframework.security.messaging.access.intercept.MessageAuthorizationContext;
 import org.springframework.security.messaging.access.intercept.MessageMatcherDelegatingAuthorizationManager.Builder;
 
@@ -54,7 +56,10 @@ public class WebSocketSecurityConfig {
                 return new AuthorizationDecision(false);
             }
 
-            Long memberId = Long.valueOf(accessor.getUser().getName());
+            Authentication authentication = (Authentication) accessor.getUser();
+            CustomUserDetails userDetails = (CustomUserDetails) authentication.getPrincipal();
+
+            Long memberId = userDetails.getMember().getId();
             boolean granted = chatRoomMemberService.isChatRoomMember(chatRoomId, memberId);
             return new AuthorizationDecision(granted);
         };

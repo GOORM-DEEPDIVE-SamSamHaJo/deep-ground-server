@@ -8,7 +8,7 @@ import lombok.NoArgsConstructor;
 @NoArgsConstructor(access = AccessLevel.PRIVATE)
 public class DestinationUtils {
 
-    private static final Pattern CHATROOM_PATTERN = Pattern.compile("^/(topic/app)/chatrooms/(\\d+)/?.*");
+    private static final Pattern CHATROOM_PATTERN = Pattern.compile("^/(topic|app)/chatrooms/(\\d+)/?.*");
 
     public static Long extractChatRoomId(String destination) {
         Matcher matcher = CHATROOM_PATTERN.matcher(destination);
