@@ -1,15 +1,15 @@
 package com.samsamhajo.deepground.auth.service;
 
-import com.samsamhajo.deepground.auth.dto.LoginRequest;
-import com.samsamhajo.deepground.auth.dto.LoginResponse;
-import com.samsamhajo.deepground.auth.dto.RegisterRequest;
+import com.samsamhajo.deepground.auth.dto.*;
 import com.samsamhajo.deepground.auth.exception.AuthErrorCode;
 import com.samsamhajo.deepground.auth.exception.AuthException;
 import com.samsamhajo.deepground.auth.jwt.JwtProvider;
+import com.samsamhajo.deepground.auth.repository.RefreshTokenRepository;
 import com.samsamhajo.deepground.member.entity.Member;
 import com.samsamhajo.deepground.member.repository.MemberRepository;
 import jakarta.transaction.Transactional;
 import lombok.RequiredArgsConstructor;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 
@@ -19,6 +19,12 @@ public class AuthService {
     private final MemberRepository memberRepository;
     private final PasswordEncoder passwordEncoder;
     private final JwtProvider jwtProvider;
+    private final RefreshTokenRepository refreshTokenRepository;
+
+    @Value("${jwt.refresh-token-validity-in-seconds}")
+    private Long refreshTokenValidityInSeconds;
+    // 리프레시 토큰 재발급 기준 시간
+    private static final long REISSUE_REFRESH_TOKEN_TIME = 259200L;  // 3일을 초 단위로
 
     @Transactional
     public Long register(RegisterRequest request) {
@@ -50,6 +56,12 @@ public class AuthService {
         String accessToken = jwtProvider.createAccessToken(member.getId());
         String refreshToken = jwtProvider.createRefreshToken(member.getId());
 
+        refreshTokenRepository.save(
+                member.getId(),
+                refreshToken,
+                refreshTokenValidityInSeconds
+        );
+
         return new LoginResponse(
                 accessToken,
                 refreshToken,
@@ -57,6 +69,34 @@ public class AuthService {
                 member.getEmail(),
                 member.getNickname()
         );
+    }
+
+    @Transactional
+    public TokenRefreshResponse refreshAccessToken(TokenRefreshRequest request) {
+
+        if (!jwtProvider.validateToken(request.getRefreshToken())) {
+            throw new AuthException(AuthErrorCode.INVALID_REFRESH_TOKEN);
+        }
+        Long memberId = jwtProvider.getMemberId(request.getRefreshToken());
+
+        String savedRefreshToken = refreshTokenRepository.findByMemberId(memberId);
+        if (savedRefreshToken == null || !savedRefreshToken.equals(request.getRefreshToken())) {
+            throw new AuthException(AuthErrorCode.INVALID_REFRESH_TOKEN);
+        }
+
+        String newAccessToken = jwtProvider.createAccessToken(memberId);
+        String currentRefreshToken = request.getRefreshToken();
+
+        long remainingTime = jwtProvider.getRemainingTime(currentRefreshToken);
+        if (remainingTime <= REISSUE_REFRESH_TOKEN_TIME) {
+            String newRefreshToken = jwtProvider.createRefreshToken(memberId);
+            // 새로운 리프레시 토큰을 redis에 저장
+            refreshTokenRepository.save(memberId, newRefreshToken, refreshTokenValidityInSeconds);
+
+            return new TokenRefreshResponse(newAccessToken, newRefreshToken);
+        }
+
+        return new TokenRefreshResponse(newAccessToken, currentRefreshToken);
     }
 
     public void checkEmailDuplicate(String email) {

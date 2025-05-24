@@ -1,9 +1,6 @@
 package com.samsamhajo.deepground.auth.controller;
 
-import com.samsamhajo.deepground.auth.dto.LoginRequest;
-import com.samsamhajo.deepground.auth.dto.LoginResponse;
-import com.samsamhajo.deepground.auth.dto.RegisterRequest;
-import com.samsamhajo.deepground.auth.dto.RegisterResponse;
+import com.samsamhajo.deepground.auth.dto.*;
 import com.samsamhajo.deepground.auth.service.AuthService;
 import com.samsamhajo.deepground.auth.success.AuthSuccessCode;
 import com.samsamhajo.deepground.global.success.SuccessResponse;
@@ -55,5 +52,15 @@ public class AuthController {
         return ResponseEntity
                 .status(AuthSuccessCode.LOGIN_SUCCESS.getStatus())
                 .body(SuccessResponse.of(AuthSuccessCode.LOGIN_SUCCESS, response));
+    }
+
+    @PostMapping("/token/refresh")
+    public ResponseEntity<SuccessResponse<TokenRefreshResponse>> refreshAccessToken(
+            @Valid @RequestBody TokenRefreshRequest request
+    ) {
+        TokenRefreshResponse response = authService.refreshAccessToken(request);
+        return ResponseEntity
+                .status(AuthSuccessCode.TOKEN_REFRESHED.getStatus())
+                .body(SuccessResponse.of(AuthSuccessCode.TOKEN_REFRESHED, response));
     }
 }

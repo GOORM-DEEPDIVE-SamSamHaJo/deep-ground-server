@@ -76,4 +76,19 @@ public class JwtProvider {
             return false;
         }
     }
+
+    public long getRemainingTime(String token) {
+        Claims claims = Jwts.parser()
+                .verifyWith(key)
+                .build()
+                .parseSignedClaims(token)
+                .getPayload();
+
+        Date expiration = claims.getExpiration();
+        return (expiration.getTime() - System.currentTimeMillis()) / 1000;
+    }
+
+    public String createTestRefreshToken(Long memberId, long customValidityInSeconds) {
+        return createToken(memberId, customValidityInSeconds * 1000);
+    }
 }
