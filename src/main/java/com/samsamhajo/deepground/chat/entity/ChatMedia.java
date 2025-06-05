@@ -35,4 +35,12 @@ public class ChatMedia extends BaseDocument {
     public static ChatMedia of(Long chatRoomId, Long memberId, ChatMessageMedia media) {
         return new ChatMedia(chatRoomId, memberId, media);
     }
+
+    public void send() {
+        this.status = FileStatus.SENT;
+    }
+
+    public void cancel() {
+        this.status = FileStatus.CANCELED;
+    }
 }
