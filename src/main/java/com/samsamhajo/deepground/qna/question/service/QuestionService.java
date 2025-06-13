@@ -2,10 +2,7 @@ package com.samsamhajo.deepground.qna.question.service;
 
 import com.samsamhajo.deepground.member.entity.Member;
 import com.samsamhajo.deepground.member.repository.MemberRepository;
-import com.samsamhajo.deepground.qna.question.Dto.QuestionCreateRequestDto;
-import com.samsamhajo.deepground.qna.question.Dto.QuestionCreateResponseDto;
-import com.samsamhajo.deepground.qna.question.Dto.QuestionUpdateResponseDto;
-import com.samsamhajo.deepground.qna.question.Dto.QuestionUpdateRequestDto;
+import com.samsamhajo.deepground.qna.question.Dto.*;
 import com.samsamhajo.deepground.qna.question.entity.Question;
 import com.samsamhajo.deepground.qna.question.entity.QuestionTag;
 import com.samsamhajo.deepground.qna.question.exception.QuestionErrorCode;
@@ -138,6 +135,27 @@ public class QuestionService{
 
     private void updateQuestionMedia(QuestionUpdateRequestDto questionUpdateRequestDto, Question question) {
         questionMediaService.createQuestionMedia(question, questionUpdateRequestDto.getImages());
+    }
+
+    @Transactional
+    public QuestionUpdateStatusResponseDto updateQuestionStatus(QuestionUpdateStatusRequestDto questionUpdateStatusRequestDto, Long memberId) {
+
+        Member member = memberRepository.findById(questionUpdateStatusRequestDto.getMemberId()).orElseThrow(
+                ()-> new IllegalArgumentException("존재하는 사용자가 아닙니다."));
+
+        Question question = questionRepository.findById(questionUpdateStatusRequestDto.getQuestionId()).orElseThrow(
+                () -> new QuestionException(QuestionErrorCode.QUESTION_NOT_FOUND));
+
+        if(!member.getId().equals(memberId)) {
+            throw new QuestionException(QuestionErrorCode.QUESTION_MEMBER_MISMATCH);
+        }
+        question.updateStatus(questionUpdateStatusRequestDto.getStatus());
+
+        return QuestionUpdateStatusResponseDto.of(
+                question.getId(),
+                question.getQuestionStatus(),
+                memberId
+        );
     }
 
 }

@@ -70,6 +70,8 @@ public class Question extends BaseEntity {
     public void updateQuesiton(String title, String content){
         this.title = title;
         this.content = content;
-
+    }
+    public void updateStatus(QuestionStatus questionStatus){
+        this.questionStatus = questionStatus;
     }
 }
