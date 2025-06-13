@@ -1,14 +1,17 @@
 package com.samsamhajo.deepground;
 
-import com.fasterxml.jackson.databind.JsonNode;
-import com.fasterxml.jackson.databind.ObjectMapper;
 import com.samsamhajo.deepground.member.entity.Member;
 import com.samsamhajo.deepground.member.repository.MemberRepository;
 import com.samsamhajo.deepground.qna.question.Dto.QuestionCreateRequestDto;
+import com.samsamhajo.deepground.qna.question.Dto.QuestionCreateResponseDto;
 import com.samsamhajo.deepground.qna.question.entity.Question;
+import com.samsamhajo.deepground.qna.question.entity.QuestionTag;
 import com.samsamhajo.deepground.qna.question.exception.QuestionException;
 import com.samsamhajo.deepground.qna.question.repository.QuestionRepository;
+import com.samsamhajo.deepground.qna.question.repository.QuestionTagRepository;
 import com.samsamhajo.deepground.qna.question.service.QuestionService;
+import com.samsamhajo.deepground.techStack.entity.TechStack;
+import com.samsamhajo.deepground.techStack.repository.TechStackRepository;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
@@ -17,23 +20,19 @@ import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMock
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.http.MediaType;
 import org.springframework.mock.web.MockMultipartFile;
-import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.multipart.MultipartFile;
 import java.util.List;
+import java.util.stream.Collectors;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
-import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.multipart;
-import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
+
 
 @SpringBootTest
 @AutoConfigureMockMvc
 @Transactional
 public class QuestionTest {
-
-    @Autowired
-    private MockMvc mockMvc;
 
     @Autowired
     private QuestionRepository questionRepository;
@@ -43,6 +42,12 @@ public class QuestionTest {
 
     @Autowired
     private QuestionService questionService;
+
+    @Autowired
+    private TechStackRepository techStackRepository;
+
+    @Autowired
+    private QuestionTagRepository questionTagRepository;
 
     private Long memberId;
 
@@ -61,20 +66,35 @@ public class QuestionTest {
         String title = "통합 테스트 질문 제목";
         String content = "이것은 질문 내용입니다.";
 
-
-        List<Long> techStack = List.of(1L, 2L);
         List<MultipartFile> mediaFiles = List.of(
                 new MockMultipartFile("mediaFiles", "image1.png", MediaType.IMAGE_PNG_VALUE, "dummy image content 1".getBytes())
         );
 
 
-        QuestionCreateRequestDto questionCreateRequestDto = new QuestionCreateRequestDto(title, content, techStack, mediaFiles);
+        List<String> techStackNames = List.of("techStack1", "techStack2");
+        List<String> categoryNames = List.of("category1", "category2");
+        List<TechStack> techStacks = techStackNames.stream()
+                .map(name -> TechStack.of(name, categoryNames.toString())) // 정적 팩토리 메서드가 없다면 new TechStack(name) 사용
+                .collect(Collectors.toList());
+        List<TechStack> savedTechStacks = techStackRepository.saveAll(techStacks);
 
-        Question question = questionService.createQuestion(questionCreateRequestDto, memberId);
+        QuestionCreateRequestDto questionCreateRequestDto = new QuestionCreateRequestDto(title, content, techStackNames, mediaFiles);
+
+        QuestionCreateResponseDto questionCreateResponseDto = questionService.createQuestion(questionCreateRequestDto, memberId);
 
         // assert DB에 잘 들어갔는지 확인
-        assertThat(questionRepository.findById(question.getId())).isPresent();
-        assertThat(questionRepository.findById(question.getId()).get().getTitle()).isEqualTo(title);
+        assertThat(questionRepository.findById(questionCreateResponseDto.getQuestionId())).isPresent();
+        assertThat(questionRepository.findById(questionCreateResponseDto.getQuestionId()).get().getTitle()).isEqualTo(title);
+
+        // 해당 질문에 연결된 QuestionTag가 잘 저장되었는지 확인
+        List<QuestionTag> questionTags = questionTagRepository.findAllByQuestionId(questionCreateResponseDto.getQuestionId());
+        assertThat(questionTags).hasSize(techStackNames.size());
+
+        // 저장된 태그 이름 확인
+        List<String> savedTagNames = questionTags.stream()
+                .map(qt -> qt.getTechStack().getName())
+                .toList();
+        assertThat(savedTagNames).containsExactlyInAnyOrderElementsOf(techStackNames);
     }
 
     @Test
@@ -88,15 +108,20 @@ public class QuestionTest {
                 new MockMultipartFile("mediaFiles", "image1.png", MediaType.IMAGE_PNG_VALUE, "dummy image content 1".getBytes())
         );
 
-        // techStack 예시 (빈 리스트 혹은 테스트용 값 넣기)
-        List<Long> techStack = List.of(1L, 2L);
 
-        QuestionCreateRequestDto questionCreateRequestDto = new QuestionCreateRequestDto(title, content, techStack, mediaFiles);
+        List<String> techStackNames = List.of("techStack1", "techStack2");
+        List<String> categoryNames = List.of("category1", "category2");
+        List<TechStack> techStacks = techStackNames.stream()
+                .map(name -> TechStack.of(name, categoryNames.toString())) // 정적 팩토리 메서드가 없다면 new TechStack(name) 사용
+                .collect(Collectors.toList());
+        List<TechStack> savedTechStacks = techStackRepository.saveAll(techStacks);
 
-        Question question = questionService.createQuestion(questionCreateRequestDto, memberId);
+        QuestionCreateRequestDto questionCreateRequestDto = new QuestionCreateRequestDto(title, content, techStackNames, mediaFiles);
 
-        assertThat(questionRepository.findById(question.getId())).isPresent();
-        assertThat(questionRepository.findById(question.getId()).get().getTitle()).isEqualTo(title);
+        QuestionCreateResponseDto questionCreateResponseDto = questionService.createQuestion(questionCreateRequestDto, memberId);
+
+        assertThat(questionRepository.findById(questionCreateResponseDto.getQuestionId())).isPresent();
+        assertThat(questionRepository.findById(questionCreateResponseDto.getQuestionId()).get().getTitle()).isEqualTo(title);
     }
 
     @Test
@@ -127,9 +152,14 @@ public class QuestionTest {
         );
 
         // techStack 예시 (빈 리스트 혹은 테스트용 값 넣기)
-        List<Long> techStack = List.of(1L, 2L);
+        List<String> techStackNames = List.of("techStack1", "techStack2");
+        List<String> categoryNames = List.of("category1", "category2");
+        List<TechStack> techStacks = techStackNames.stream()
+                .map(name -> TechStack.of(name, categoryNames.toString())) // 정적 팩토리 메서드가 없다면 new TechStack(name) 사용
+                .collect(Collectors.toList());
+        List<TechStack> savedTechStacks = techStackRepository.saveAll(techStacks);
 
-        QuestionCreateRequestDto questionCreateRequestDto = new QuestionCreateRequestDto(title, content, techStack, mediaFiles);
+        QuestionCreateRequestDto questionCreateRequestDto = new QuestionCreateRequestDto(title, content, techStackNames, mediaFiles);
 
         assertThatThrownBy(() -> questionService.createQuestion(questionCreateRequestDto, memberId)
         ).isInstanceOf(QuestionException.class)
@@ -148,10 +178,14 @@ public class QuestionTest {
                 new MockMultipartFile("mediaFiles", "image1.png", MediaType.IMAGE_PNG_VALUE, "dummy image content 1".getBytes())
         );
 
-        // techStack 예시 (빈 리스트 혹은 테스트용 값 넣기)
-        List<Long> techStack = List.of(1L, 2L);
+        List<String> techStackNames = List.of("techStack1", "techStack2");
+        List<String> categoryNames = List.of("category1", "category2");
+        List<TechStack> techStacks = techStackNames.stream()
+                .map(name -> TechStack.of(name, categoryNames.toString())) // 정적 팩토리 메서드가 없다면 new TechStack(name) 사용
+                .collect(Collectors.toList());
+        List<TechStack> savedTechStacks = techStackRepository.saveAll(techStacks);
 
-        QuestionCreateRequestDto questionCreateRequestDto = new QuestionCreateRequestDto(title, content, techStack, mediaFiles);
+        QuestionCreateRequestDto questionCreateRequestDto = new QuestionCreateRequestDto(title, content, techStackNames, mediaFiles);
 
         assertThatThrownBy(() -> questionService.createQuestion(questionCreateRequestDto, memberId)
         ).isInstanceOf(QuestionException.class)

@@ -4,7 +4,6 @@ import com.samsamhajo.deepground.global.BaseEntity;
 import com.samsamhajo.deepground.member.entity.Member;
 import com.samsamhajo.deepground.qna.answer.entity.Answer;
 import jakarta.persistence.*;
-import jakarta.validation.constraints.NotBlank;
 import lombok.AccessLevel;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
@@ -43,10 +42,10 @@ public class Question extends BaseEntity {
     @JoinColumn(name = "member_id")
     private Member member;
 
-    @OneToMany(mappedBy = "question", cascade = CascadeType.REMOVE)
+    @OneToMany(mappedBy = "question", cascade = CascadeType.REMOVE, orphanRemoval = true)
     private List<Answer> answers = new ArrayList<>();
 
-    @OneToMany(mappedBy = "question")
+    @OneToMany(mappedBy = "question", cascade = CascadeType.REMOVE, orphanRemoval = true)
     private List<QuestionTag> questionTags = new ArrayList<>();
 
     private Question(String title, String content, Member member) {

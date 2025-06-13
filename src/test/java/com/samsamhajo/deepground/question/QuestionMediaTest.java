@@ -3,12 +3,15 @@ package com.samsamhajo.deepground;
 import com.samsamhajo.deepground.member.entity.Member;
 import com.samsamhajo.deepground.member.repository.MemberRepository;
 import com.samsamhajo.deepground.qna.question.Dto.QuestionCreateRequestDto;
+import com.samsamhajo.deepground.qna.question.Dto.QuestionCreateResponseDto;
 import com.samsamhajo.deepground.qna.question.entity.Question;
 import com.samsamhajo.deepground.qna.question.entity.QuestionMedia;
 import com.samsamhajo.deepground.qna.question.repository.QuestionMediaRepository;
+import com.samsamhajo.deepground.qna.question.repository.QuestionRepository;
 import com.samsamhajo.deepground.qna.question.service.QuestionMediaService;
 import com.samsamhajo.deepground.qna.question.service.QuestionService;
-import org.junit.jupiter.api.BeforeEach;
+import com.samsamhajo.deepground.techStack.entity.TechStack;
+import com.samsamhajo.deepground.techStack.repository.TechStackRepository;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -39,31 +42,42 @@ public class QuestionMediaTest {
     private Long memberId;
     @Autowired
     private QuestionMediaService questionMediaService;
-
-    @BeforeEach
-    void 테스트용_멤버_저장() {
-        // 테스트용 멤버 저장
-        Member member = Member.createLocalMember("tses1@gmail.com", "TSE S1", "TSE S2");
-        memberRepository.save(member);
-        memberId = member.getId();
-    }
+    @Autowired
+    private TechStackRepository techStackRepository;
+    @Autowired
+    private QuestionRepository questionRepository;
 
     @Test
     @DisplayName("질문_미디어_생성_후 삭제_확인_테스트")
     void question_exception(){
 
+        Member member = Member.createLocalMember("tses1@gmail.com", "TSE S1", "TSE S2");
+        memberRepository.save(member);
+        memberId = member.getId();
+
         String title = "미디어 생성 테스트";
         String content = "미디어 생성 테스트 답변";
-
-        List<Long> techStack = List.of(1L, 2L);
 
         List<MultipartFile> mediaFiles = List.of(
                 new MockMultipartFile("mediaFiles", "image1.png", MediaType.IMAGE_PNG_VALUE, "dummy image content 1".getBytes())
         );
 
         //RequestDto에 인자 전달 후, Question 생성
-        QuestionCreateRequestDto questionCreateRequestDto = new QuestionCreateRequestDto(title, content, techStack, mediaFiles);
-        Question question = questionService.createQuestion(questionCreateRequestDto, memberId);
+        List<String> techStackNames = List.of("techStack1", "techStack2");
+        List<String> categoryNames = List.of("category1", "category2");
+        List<TechStack> techStacks = techStackNames.stream()
+                .map(name -> TechStack.of(name, categoryNames.toString())) // 정적 팩토리 메서드가 없다면 new TechStack(name) 사용
+                .collect(Collectors.toList());
+        List<TechStack> savedTechStacks = techStackRepository.saveAll(techStacks);
+
+        QuestionCreateRequestDto questionCreateRequestDto = new QuestionCreateRequestDto(title, content, techStackNames, mediaFiles);
+        QuestionCreateResponseDto questionCreateResponseDto = questionService.createQuestion(questionCreateRequestDto, memberId);
+
+            Question question = questionRepository.save(Question.of(
+                title,
+                content,
+                member
+        ));
 
         List<QuestionMedia> mediaList = List.of(
                         new MockMultipartFile("mediaFiles", "image1.png", MediaType.IMAGE_PNG_VALUE, "dummy image content 1".getBytes())
@@ -72,9 +86,9 @@ public class QuestionMediaTest {
                 .collect(Collectors.toList());
 
         questionMediaRepository.saveAll(mediaList);
-        questionMediaService.deleteQuestionMedia(question.getId());
+        questionMediaService.deleteQuestionMedia(questionCreateResponseDto.getQuestionId());
 
-        assertThat(questionMediaRepository.findAllByQuestionId(question.getId()).isEmpty()).isTrue();
+        assertThat(questionMediaRepository.findAllByQuestionId(questionCreateResponseDto.getQuestionId()).isEmpty()).isTrue();
 
 
     }

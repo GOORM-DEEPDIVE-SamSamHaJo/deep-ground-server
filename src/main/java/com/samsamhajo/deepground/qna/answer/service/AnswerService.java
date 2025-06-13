@@ -73,10 +73,10 @@ public class AnswerService {
         Question question = questionRepository.findById(answer.getQuestion().getId())
                 .orElseThrow(() -> new QuestionException(QuestionErrorCode.QUESTION_NOT_FOUND));
 
-        answerRepository.deleteById(answer.getId());
-        question.decrementAnswerCount();
         answerMediaService.deleteAnswerMedia(answerId);
         answerLikeService.deleteAllByAnswerId(answerId);
+        answerRepository.deleteById(answer.getId());
+        question.decrementAnswerCount();
 
         return answer.getId();
     }

@@ -85,11 +85,13 @@ public class CommentService {
         }
         comment.updateCommentContent(updateCommentRequestDto.getCommentContent());
 
+
         return UpdateCommentResponseDto.of(
                 comment.getCommentContent(),
+                comment.getMember().getId(),
                 comment.getAnswer().getId(),
-                comment.getId(),
-                comment.getMember().getId()
+                comment.getId()
+
         );
     }
 
