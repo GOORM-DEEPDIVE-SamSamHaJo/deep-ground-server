@@ -24,16 +24,17 @@ public class FriendController {
     private final FriendService friendService;
 
     @PostMapping("/request")
-    public ResponseEntity<SuccessResponse> requestFriend(@RequestBody @Valid FriendRequestDto dto) {
-        Long friendId = friendService.sendFriendRequest(dto.getRequesterId(), dto.getReceiverEmail());
+    public ResponseEntity<SuccessResponse> requestFriend(@RequestBody @Valid FriendRequestDto dto,
+                                                         @AuthenticationPrincipal Member member) {
+        Long friendId = friendService.sendFriendRequest(member.getId(), dto.getReceiverEmail());
         return ResponseEntity
                         .ok(SuccessResponse.of(FriendSuccessCode.FRIEND_SUCCESS_REQUEST,friendId));
     }
 
 
     @GetMapping("/sent")
-    public ResponseEntity<SuccessResponse<List<FriendDto>>> getSentFriendRequests(@RequestParam Long requesterId) {
-        List<FriendDto> sentList = friendService.findSentFriendRequest(requesterId);
+    public ResponseEntity<SuccessResponse<List<FriendDto>>> getSentFriendRequests(@AuthenticationPrincipal Member member) {
+        List<FriendDto> sentList = friendService.findSentFriendRequest(member.getId());
         return ResponseEntity.ok(
                 SuccessResponse.of(FriendSuccessCode.FRIEND_SENT_LIST_FOUND, sentList));
     }
@@ -41,32 +42,32 @@ public class FriendController {
 
     @PatchMapping("/sent/{friendId}/cancel")
     public ResponseEntity<SuccessResponse> cancelFriendRequest(@PathVariable Long friendId,
-                                                           @RequestParam Long requesterId){
-        friendService.cancelFriendRequest(friendId,requesterId);
+                                                               @AuthenticationPrincipal Member member){
+        friendService.cancelFriendRequest(friendId, member.getId());
         return ResponseEntity
                 .ok(SuccessResponse.of(FriendSuccessCode.FRIEND_SUCCESS_CANCEL,friendId));
 
     }
 
     @GetMapping("/receive")
-    public ResponseEntity<SuccessResponse<List<FriendDto>>> getReceiveFriendRequests(@RequestParam Long receiverId) {
-        List<FriendDto> receiveList = friendService.findFriendReceive(receiverId);
+    public ResponseEntity<SuccessResponse<List<FriendDto>>> getReceiveFriendRequests(@AuthenticationPrincipal Member member) {
+        List<FriendDto> receiveList = friendService.findFriendReceive(member.getId());
         return ResponseEntity
                 .ok(SuccessResponse.of(FriendSuccessCode.FRIEND_RECEIVE_LIST_FOUND, receiveList));
     }
 
     @PatchMapping("/receive/{friendId}/accept")
     public ResponseEntity<SuccessResponse> acceptFriendRequest(@PathVariable Long friendId,
-                                                               @RequestParam Long receiverId){
-        Long result = friendService.acceptFriendRequest(friendId, receiverId);
+                                                               @AuthenticationPrincipal Member member){
+        Long result = friendService.acceptFriendRequest(friendId, member.getId());
         return ResponseEntity
                 .ok(SuccessResponse.of(FriendSuccessCode.FRIEND_SUCCESS_ACCEPT,result));
     }
 
     @PatchMapping("/receive/{friendId}/refusal")
     public ResponseEntity<SuccessResponse> refusalFriendRequest(@PathVariable Long friendId,
-                                                                @RequestParam Long receiverId){
-        friendService.refusalFriendRequest(friendId,receiverId);
+                                                                @AuthenticationPrincipal Member member){
+        friendService.refusalFriendRequest(friendId,member.getId());
         return ResponseEntity
                 .ok(SuccessResponse.of(FriendSuccessCode.FRIEND_SUCCESS_REFUSAL,friendId));
 
@@ -74,8 +75,9 @@ public class FriendController {
 
     @PostMapping("/from-profile/{receiverId}")
     public ResponseEntity<SuccessResponse> requestProfileFriend(@PathVariable Long receiverId,
-                                                                @RequestParam Long memberId) {
-        Long friendId = friendService.sendProfileFriendRequest(memberId, receiverId);
+                                                                @AuthenticationPrincipal Member member) {
+        Long friendId = friendService.sendProfileFriendRequest(member.getId(), receiverId);
+
         return ResponseEntity
                 .ok(SuccessResponse.of(FriendSuccessCode.FRIEND_SUCCESS_REQUEST,friendId));
     }
@@ -89,8 +91,8 @@ public class FriendController {
     }
 
     @GetMapping
-    public  ResponseEntity<SuccessResponse<List<FriendDto>>> getFriendList(@RequestParam Long memberId){
-        List<FriendDto> friends = friendService.getFriendByMemberId(memberId);
+    public  ResponseEntity<SuccessResponse<List<FriendDto>>> getFriendList(@AuthenticationPrincipal Member member){
+        List<FriendDto> friends = friendService.getFriendByMemberId(member.getId());
         return ResponseEntity
                 .ok(SuccessResponse.of(FriendSuccessCode.FRIEND_SUCCESS_GET_LIST,friends));
     }

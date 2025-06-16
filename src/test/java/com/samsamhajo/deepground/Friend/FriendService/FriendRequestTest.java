@@ -9,6 +9,8 @@ import com.samsamhajo.deepground.friend.repository.FriendRepository;
 import com.samsamhajo.deepground.friend.service.FriendService;
 
 import com.samsamhajo.deepground.member.entity.Member;
+import com.samsamhajo.deepground.member.exception.MemberErrorCode;
+import com.samsamhajo.deepground.member.exception.MemberException;
 import com.samsamhajo.deepground.member.repository.MemberRepository;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -71,10 +73,10 @@ public class FriendRequestTest {
         //given
         friendService.sendFriendRequest(requester.getId(), receiver.getEmail());
         //when,then
-        FriendException exception = assertThrows(FriendException.class, () ->
+        MemberException exception = assertThrows(MemberException.class, () ->
                 friendService.sendFriendRequest(requester.getId(), "garde@gmail.com"));
 
-        assertEquals(FriendErrorCode.INVALID_MEMBER_EMAIL, exception.getErrorCode());
+        assertEquals(MemberErrorCode.INVALID_MEMBER_EMAIL, exception.getErrorCode());
     }
 
     @Test
@@ -179,11 +181,11 @@ public class FriendRequestTest {
         Long invalidRequesterId = 99L; // 실제 존재하지 않는 ID
 
         // when & then
-        FriendException exception = assertThrows(FriendException.class, () ->
+        MemberException exception = assertThrows(MemberException.class, () ->
                 friendService.sendProfileFriendRequest(invalidRequesterId, receiver.getId())
         );
 
-        assertEquals(FriendErrorCode.INVALID_MEMBER_ID, exception.getErrorCode());
+        assertEquals(MemberErrorCode.INVALID_MEMBER_ID, exception.getErrorCode());
     }
 
     @Test

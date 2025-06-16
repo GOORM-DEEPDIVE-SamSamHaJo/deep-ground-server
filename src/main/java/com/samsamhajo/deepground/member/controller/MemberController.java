@@ -20,13 +20,13 @@ public class MemberController {
 
     private final MemberService memberService;
 
-    @PutMapping("/{memberId}/profile")
-    public ResponseEntity<SuccessResponse> editMemberProfile(@RequestParam Long memberId,
-                                                             @RequestBody @Valid MemberProfileDto memberprofile) {
+    @PutMapping("/profile")
+    public ResponseEntity<SuccessResponse> editMemberProfile(@RequestBody @Valid MemberProfileDto memberProfile,
+                                                             @AuthenticationPrincipal CustomUserDetails userDetails) {
 
-        MemberProfileDto profile = memberService.editMemberProfile(memberId, memberprofile);
-        return ResponseEntity
-                .ok(SuccessResponse.of(ProfileSuccessCode.PROFILE_SUCCESS_CODE,profile));
+        Long memberId = userDetails.getMember().getId();
+        MemberProfileDto profile = memberService.editMemberProfile(memberId, memberProfile);
+
 
     }
 }

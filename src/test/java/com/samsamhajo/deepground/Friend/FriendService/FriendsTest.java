@@ -3,6 +3,7 @@ package com.samsamhajo.deepground.Friend.FriendService;
 
 
 import com.samsamhajo.deepground.friend.Dto.FriendDto;
+import com.samsamhajo.deepground.friend.entity.Friend;
 import com.samsamhajo.deepground.friend.repository.FriendRepository;
 import com.samsamhajo.deepground.friend.service.FriendService;
 import com.samsamhajo.deepground.member.entity.Member;
@@ -15,6 +16,7 @@ import org.springframework.boot.test.context.SpringBootTest;
 
 import java.util.List;
 
+import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 
@@ -55,17 +57,20 @@ public class FriendsTest {
 
     }
 
-//TODO: 친구 목록 API와 머지 후 친구목록에 있는 친구 수로 COUNT해서 테스트
-/*    @Test
+    @Test
     public void 친구_삭제_성공() throws Exception {
         //given
         Long friendId = friendService.sendFriendRequest(requester.getId(), receiver.getEmail());
         friendService.acceptFriendRequest(friendId, receiver.getId());
+
         //when
         friendService.deleteFriendById(friendId);
-        //then
 
-    }*/
+        Friend deletedFriend = friendRepository.findById(friendId)
+                .orElseThrow(() -> new RuntimeException("삭제된 친구가 DB에 존재하지 않음"));
+
+        assertTrue(deletedFriend.isDeleted());
+    }
 
     @Test
     public void 친구_목록() throws Exception {

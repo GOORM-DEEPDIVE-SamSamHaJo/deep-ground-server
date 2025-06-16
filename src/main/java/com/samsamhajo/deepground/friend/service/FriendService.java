@@ -28,10 +28,10 @@ public class FriendService {
     public Long sendFriendRequest(Long requesterId, String receiverEmail) {
 
         Member requester = memberRepository.findById(requesterId)
-                .orElseThrow(() -> new FriendException(FriendErrorCode.INVALID_MEMBER_EMAIL));
+                .orElseThrow(() -> new MemberException(MemberErrorCode.INVALID_MEMBER_EMAIL));
 
         Member receiver = memberRepository.findByEmail(receiverEmail)
-                .orElseThrow(() -> new FriendException(FriendErrorCode.INVALID_MEMBER_EMAIL));
+                .orElseThrow(() -> new MemberException(MemberErrorCode.INVALID_MEMBER_EMAIL));
 
         validateSendRequest(requester, receiver, receiverEmail);
 
@@ -143,7 +143,7 @@ public class FriendService {
                 .orElseThrow(() -> new MemberException(MemberErrorCode.INVALID_MEMBER_ID));
 
         Member receiver = memberRepository.findById(receiverId)
-                .orElseThrow(() -> new FriendException(FriendErrorCode.INVALID_MEMBER_ID));
+                .orElseThrow(() -> new MemberException(MemberErrorCode.INVALID_MEMBER_ID));
 
         validateSendProfileRequest(requester, receiver);
 
@@ -187,9 +187,8 @@ public class FriendService {
                 .map(friend -> {
                     if (friend.getReceiveMember().getId().equals(memberId)) {
                         return FriendDto.fromReceived(friend);
-                    } else {
-                        return FriendDto.fromSent(friend);
                     }
+                    return FriendDto.fromSent(friend);
                 })
                 .toList();
     }

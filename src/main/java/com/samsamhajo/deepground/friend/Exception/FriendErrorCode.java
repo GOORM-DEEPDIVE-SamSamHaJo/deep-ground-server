@@ -13,12 +13,11 @@ public enum FriendErrorCode implements ErrorCode {
     INVALID_EMAIL(HttpStatus.BAD_REQUEST, "올바른 이메일 형식을 입력해주세요."),
     BLANK_EMAIL(HttpStatus.BAD_REQUEST, "친구요청을 보낼 이메일을 입력해주세요"),
     ALREADY_FRIEND(HttpStatus.BAD_REQUEST, "이미 친구로 등록된 사용자입니다."),
-    INVALID_MEMBER_EMAIL(HttpStatus.BAD_REQUEST, "찾을 수 없는 사용자입니다"),
     INVALID_FRIEND_REQUEST(HttpStatus.BAD_REQUEST, "친구 요청이 존재하지 않습니다"),
     UNAUTHORIZED_ACCESS(HttpStatus.FORBIDDEN, "다른 사용자의 친구 요청은 수락할 수 없습니다."),
-    INVALID_MEMBER_ID(HttpStatus.BAD_REQUEST, "존재하지 않는 회원입니다."),
     REQUEST_ALREADY_RECEIVED(HttpStatus.BAD_REQUEST, "상대방이 이미 친구 요청을 보냈습니다"),
     INVALID_FRIEND(HttpStatus.BAD_REQUEST,"존재하지 않은 친구입니다");
+
 
     private final HttpStatus status;
     private final String message;
