@@ -13,6 +13,7 @@ import com.samsamhajo.deepground.feed.feedshared.model.FetchSharedFeedResponse;
 import com.samsamhajo.deepground.feed.feedshared.service.SharedFeedService;
 import com.samsamhajo.deepground.member.entity.Member;
 import lombok.RequiredArgsConstructor;
+import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -63,8 +64,11 @@ public class FeedService {
 
 
     public FetchFeedsResponse getFeeds(Pageable pageable, Long memberId) {
+
+        Page<Feed> feeds = feedRepository.findAll(pageable);
+
         return FetchFeedsResponse.of(
-                feedRepository.findAll(pageable).stream()
+                feeds.getContent().stream()
                         .map(feed -> {
                             FetchSharedFeedResponse sharedFeedResponse =
                                     sharedFeedService.getSharedFeedResponse(feed.getId());
@@ -84,7 +88,12 @@ public class FeedService {
                                     .sharedFeed(sharedFeedResponse)
                                     .build();
                         }
-                        ).toList());
+                        ).toList(),
+                feeds.getTotalElements(),
+                feeds.getNumber(),        // 현재 페이지 번호 (0부터 시작)
+                feeds.getSize(),          // 요청된 페이지 크기
+                feeds.getTotalPages()
+        );
     }
 
     private void saveFeedMedia(FeedCreateRequest request, Feed feed) {
