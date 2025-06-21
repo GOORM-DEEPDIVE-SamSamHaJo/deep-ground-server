@@ -183,11 +183,13 @@ public class FriendService {
             throw new FriendException(FriendErrorCode.UNAUTHORIZED_ACCESS);
         }
         friend.softDelete();
+
+
     }
 
     public List<FriendDto> getFriendByMemberId(Long memberId) {
 
-            List<Friend> friends = friendRepository. findAllByMemberIdAndFriendStatus(memberId, FriendStatus.ACCEPT);
+            List<Friend> friends = friendRepository. findAllByMemberIdAndFriendStatusAndDeletedIs(memberId, FriendStatus.ACCEPT);
 
         return friends.stream()
                 .map(friend -> {
